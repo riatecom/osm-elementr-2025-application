@@ -1,6 +1,27 @@
 ---
 title: "Utiliser OpenStreetMap avec R - mise en pratique"
-author: "Louis Laurian, Ronan Ysebaert, Timothée Giraud"
+author:
+  - name: Louis Laurian
+    orcid: 0009-0002-7275-5536
+    affiliations: 
+      - ref: riate
+  - name: Ronan Ysebaert
+    orcid: 0000-0002-7344-5911
+    affiliations: 
+      - ref: riate
+  - name: Timothée Giraud
+    orcid: 0000-0002-1932-3323
+    affiliations: 
+      - ref: riate
+affiliations:
+  - id: riate
+    name: Centre pour l’analyse spatiale et la géovisualisation (UAR RIATE)
+    city: Paris
+    state: France
+    url: https://riate.cnrs.fr/
+date: 13 05 2025
+date-format: "D MMM YYYY"
+lang: fr
 format:
   html:
     embed-resources: true
@@ -100,6 +121,8 @@ Pour la cartographie, le package `maposm` (pas sur le CRAN). Il se base sur les 
 La fonction principale, `om_get()`, permet de récupérer certaines couches géographiques utiles (routes, parcs, bâti, etc), autour d'un point, dans un rayon donné.
 
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 res <- om_get(x = c(st_coordinates(pt)[1],
                     st_coordinates(pt)[2]),
               r = 2000)
@@ -155,10 +178,12 @@ poi_reproj  <- st_transform(poi , crs = "EPSG:3857")
 La fonction `om_map()` affiche les couches géographiques récupérées.
 
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 # Affichage
 om_map(res, title = "Autour de la mairie")
 mf_map(poi_reproj, type = "typo", var = "amenity", cex = .7, pch = 15, 
-       add = TRUE)
+       leg_pos = "topright", add = TRUE)
 mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 ```
 
@@ -181,6 +206,8 @@ Une fois les points d'intérêt récupérés, il est possible de les agréger da
 
 
 ```{r}
+#| fig-width: 8
+#| fig-height: 7
 grid <- st_make_grid(res$zone, cellsize = 300, square = FALSE)
 grid <- st_intersection(grid, res$zone)
 grid <- st_sf(ID = 1:length(grid), geom = grid)
@@ -211,6 +238,8 @@ knitr::include_graphics(rep('img/kde.png'))
 ```
 
 ```{r}
+#| fig-width: 8
+#| fig-height: 7.5
 p <- as.ppp(X = st_coordinates(poi_reproj), W = as.owin(res$zone))
 ds <- density.ppp(x = p, sigma = 100, eps = 10, positive = TRUE)
 
@@ -219,7 +248,7 @@ r <- rast(ds) * 100 * 100
 crs(r) <- st_crs(poi_reproj)$wkt
 r
 
-mf_map(res$zone, col = "#f2efe9", border = NA)
+mf_map(res$zone, col = "#f2efe9", border = NA, expandBB = c(0,.3,0,0))
 mf_raster(r, leg_title = "N. restaurants / ha.", leg_pos = "left", 
           pal = c( "#75871B", "#BAB97D", "#FAF3CE", "#FDE16A", "#F9B40E",
                    "#E88C23", "#A25933"), add = TRUE)
