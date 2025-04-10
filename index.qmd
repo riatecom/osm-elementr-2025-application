@@ -33,7 +33,6 @@ format:
     toc-title: Résumé
     toc-depth: 3
     toc-location: left
-    css: mytheme.scss
     bibliography: bib.bib
     linkcolor: "#d52420"
 editor_options: 
