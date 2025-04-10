@@ -1,1 +1,1 @@
-# osm-elementr-2025-application
+# Support de la séance Elementr du 13-05-2025 : Utiliser OpenStreetMap avec R - mise en pratique
