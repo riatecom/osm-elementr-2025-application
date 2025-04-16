@@ -117,7 +117,7 @@ mf_title("Tuiles OSM - OpenStreetmap.HOT")
 
 Pour la cartographie, le package `maposm` (pas sur le CRAN). Il se base sur les fonctions du package `osmdata` [@R-osmdata] (partie suivante) pour télécharger les données OSM, au **format vectoriel**.
 
-La fonction principale, `om_get()`, permet de récupérer certaines couches géographiques utiles (routes, parcs, bâti, etc), autour d'un point, dans un rayon donné.
+La fonction principale, `om_get()`, permet de récupérer certaines couches géographiques utiles (routes, parcs, bâti, etc) autour d'un point, dans un rayon donné. Le résultat prend la forme d'une liste d'objets sf.
 
 ```{r}
 #| fig-width: 7
@@ -182,8 +182,10 @@ La fonction `om_map()` affiche les couches géographiques récupérées.
 # Affichage
 om_map(res, title = "Autour de la mairie")
 mf_map(poi_reproj, type = "typo", var = "amenity", cex = .7, pch = 15, 
-       leg_pos = "topright", add = TRUE)
-mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
+       leg_pos = "topright", leg_val_cex = .9, leg_title_cex = .9,
+       add = TRUE)
+mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue",
+       add = TRUE)
 ```
 
 
@@ -196,7 +198,7 @@ mapview(res$zone, alpha.regions = 0) + mapview(poi)
 
 ::: callout-note
 ### osmextract
-Le package `osmextract` [@R-osmextract] permet d’extraire des données directement depuis une base de données OSM, sans avoir à passer par une API. Le plus petit niveau géographique auquel il est possible de télécharger les données correspond en France aux anciennes régions. Pour travailler sur Compiègne, il nous faudrait d'abord télécharger l'ensemble des données OSM de la Picardie, disponibles [ici](https://download.geofabrik.de/europe/france/picardie.html).
+Le package `osmextract` [@R-osmextract] permet d’extraire des données directement depuis une base de données OSM, sans avoir à passer par une API. Le plus petit niveau géographique auquel il est possible de télécharger les données correspond en France aux anciennes régions. Pour travailler sur Compiègne, il nous faudrait d'abord télécharger l'ensemble des données OSM de la Picardie, disponibles [ici](https://download.geofabrik.de/europe/france/picardie.html), et pesant plus de 240 Mb.
 :::
 
 ## 5. Carroyage
@@ -225,7 +227,7 @@ mf_title("Aménités gustatives - données carroyées")
 
 ## 6. Lissage (KDE)
 
-Le package `spatstat` [@R-spatstat] regroupe de nombreuses fonctions pour analyser des semis de points. Il utilise (génère ?) des objets de classe **ppp** *(planar point pattern)*, dans des fenêtres d'observations, de classe **owin** *(observation window)*.
+Le package `spatstat` [@R-spatstat] regroupe de nombreuses fonctions pour analyser des semis de points. Il utilise (génère ?) des objets de classe **ppp** *(planar point pattern)*, dans des fenêtres d'observation, de classe **owin** *(observation window)*.
 
 La fonction `density.ppp()` calcule des valeurs à partir d'une estimation par noyau (KDE). Elle prend en entrée une portée (*sigma*), ainsi qu'une résolution au sein de laquelle sera calculée la densité, en pixels (*eps*).
 
@@ -236,11 +238,19 @@ La fonction `density.ppp()` calcule des valeurs à partir d'une estimation par n
 knitr::include_graphics(rep('img/kde.png'))
 ```
 
+
 ```{r}
-#| fig-width: 8
-#| fig-height: 7.5
 p <- as.ppp(X = st_coordinates(poi_reproj), W = as.owin(res$zone))
 ds <- density.ppp(x = p, sigma = 100, eps = 10, positive = TRUE)
+```
+
+
+Une fois les densités calculées, nous créons un objet de type *SpatRaster*. La densité étant calculée sur un mètre carré, nous la multiplions par 10.000 afin de récupérer une densité par hectare.
+
+
+```{r, warning = FALSE}
+#| fig-width: 8
+#| fig-height: 7.5
 
 # Calcul densité de restaurants par hectare
 r <- rast(ds) * 100 * 100
@@ -258,6 +268,7 @@ mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(poi_reproj, pch = 20, cex = .2, col = "black", add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 mf_title("La montagne alimentaire - Compiègne")
+#changer les couleurs
 ```
 
 
@@ -265,6 +276,8 @@ Il est possible de convertir cette couche en format vecteur. Par défaut, la fon
 
 
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 # par défaut
 r_poly <- as.polygons(r) |>
   st_as_sf()
@@ -274,13 +287,14 @@ r_poly <- as.polygons(r, round = TRUE, digits = 1) |>
   st_as_sf()
 
 mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
+mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
+       add = TRUE)
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(r_poly, var = "lyr.1", breaks = quantile(r_poly$lyr.1), border = NA,
-       lwd = .2, type = "choro", leg_title = "Densité\n (n/ha)", alpha = 0.6,
-       pal = "Mint", add = TRUE)
+mf_map(r_poly, var = "lyr.1", breaks = quantile(r_poly$lyr.1),
+       border = NA, lwd = .2, type = "choro", alpha = 0.6, pal = "Mint",
+       leg_title = "Densité\n (n/ha)", add = TRUE)
 mf_map(poi_reproj, pch = 20, cex = .2, col = "black", add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 ```
@@ -289,6 +303,8 @@ mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 Par aménité, discrétisation commune
 
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 # Cafés et bars ensemble
 poi_reproj$amenity[poi_reproj$amenity %in% c("bar", "cafe")] <- "bar-cafe"
 p <- list()
@@ -300,7 +316,8 @@ for(i in 1:length(sel)){
   p[[i]] <- as.ppp(
     X = st_coordinates(poi_reproj[poi_reproj$amenity == sel[i] ,]),
     W = as.owin(res$zone))
-  ds[[i]] <- density.ppp(x = p[[i]], sigma = 100, eps = 10, positive = TRUE)
+  ds[[i]] <- density.ppp(x = p[[i]], sigma = 100, eps = 10,
+                         positive = TRUE)
   r[[i]] <- rast(ds[[i]]) * 100 * 100
   crs(r[[i]]) <- st_crs(poi_reproj)$wkt
   r[[i]] <- as.polygons(r[[i]], round = TRUE, digits = 1) |>
@@ -314,7 +331,8 @@ bks <- quantile(amp)
 pal <- mf_get_pal(n = length(bks) -1, palette = "Reds", alpha = .6, rev = TRUE)
 
 mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
+mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
+       add = TRUE)
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
@@ -326,7 +344,8 @@ mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 mf_title("Densité de bars et cafés")
 
 mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
+mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
+       add = TRUE)
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
@@ -370,7 +389,6 @@ mat_dist <- osrmTable(src = o,
                       measure = "distance",
                       osrm.profile = 'foot')
 Sys.sleep(5)
-
 mat_dur <- osrmTable(src = o,
                      dst = d,
                      measure = "duration",
@@ -418,25 +436,42 @@ o$Y <- st_coordinates(o)[, 2]
 o <- st_set_geometry(o[, c("X", "Y")], NULL)
 
 # Les points de destination restent les mêmes
-mat <- list()
+matcar <- list()
+matbike <- list()
 
 for(i in 1:nrow(d)){
-  mat[[i]] <- osrmTable(src = o[, c("X", "Y")],
+  matcar[[i]] <- osrmTable(src = o[, c("X", "Y")],
                         dst = d[i , c("X", "Y")],
                         measure = "duration",
                         osrm.profile = 'foot')
   Sys.sleep(5)
-  mat[[i]]$ID_ORIG <- c(1:nrow(o))
-  mat[[i]]$ID_DEST <- rep(i, nrow(o))
-  mat[[i]] <- data.frame("ID_ORIG" = mat[[i]]$ID_ORIG,
-                         "ID_DEST" = mat[[i]]$ID_DEST,
-                         "duration" = mat[[i]]$durations)
-  colnames(mat[[i]]) <- c("ID_ORIG", "ID_DEST", "duration")
+  matcar[[i]]$ID_ORIG <- c(1:nrow(o))
+  matcar[[i]]$ID_DEST <- rep(i, nrow(o))
+  matcar[[i]] <- data.frame("ID_ORIG" = matcar[[i]]$ID_ORIG,
+                         "ID_DEST" = matcar[[i]]$ID_DEST,
+                         "duration" = matcar[[i]]$durations)
+  colnames(matcar[[i]]) <- c("ID_ORIG", "ID_DEST", "dur_car")
 }
 
-mat <- do.call(rbind, mat)
-head(mat)
-saveRDS(mat, "data/mat.rds")
+
+for(i in 1:nrow(d)){
+  matbike[[i]] <- osrmTable(src = o[, c("X", "Y")],
+                        dst = d[i , c("X", "Y")],
+                        measure = "duration",
+                        osrm.profile = "bike")
+  Sys.sleep(5)
+  matbike[[i]]$ID_ORIG <- c(1:nrow(o))
+  matbike[[i]]$ID_DEST <- rep(i, nrow(o))
+  matbike[[i]] <- data.frame("ID_ORIG" = matbike[[i]]$ID_ORIG,
+                         "ID_DEST" = matbike[[i]]$ID_DEST,
+                         "duration" = matbike[[i]]$durations)
+  colnames(matbike[[i]]) <- c("ID_ORIG", "ID_DEST", "dur_car")
+}
+
+matcar <- do.call(rbind, matcar)
+matbike <- do.call(rbind, matbike)
+write.csv(matcar, "data/matcar.csv")
+write.csv(matbike, "data/matbike.csv")
 ```
 
 
