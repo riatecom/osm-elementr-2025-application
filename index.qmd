@@ -366,7 +366,7 @@ Le package `osrm` [@R-osrm] interface l'engin de routage [OSRM](https://project-
 Pour des calculs plus volumineux (échelle nationale voire européenne), il est possible d'installer une instance OSRM sur son propre serveur (voir [ici](https://rcarto.github.io/posts/build_osrm_server/)).
 
 
-## 7.1. Depuis la mairie
+### 7.1. Depuis la mairie
 
 Pour calculer les temps de trajet (en minutes) et les distances (en mètres) entre la mairie de Compiègne et l'ensemble des restaurants, bars et cafés situés dans un rayon de 2000m, nous utilisons la fonction `osrmTable()`, qui présente en sortie une liste composée de deux dataframes correspondant aux coordonnées des points d'origine et de destination, et d'un vecteur correspondant à la métrique calculée. **Il est possible de calculer les distances et temps de trajet entre plusieurs points en une seule requête.**
 
@@ -407,7 +407,7 @@ apply(poi$dist, 2, summary)
 Il est possible d'atteindre `r nrow(d)/2` restaurants, cafés ou bars en moins de `r round(median(poi$dur),0)` min à pieds depuis la mairie de Compiègne, et les trois quarts se situent à moins de `r round(apply(poi$dist, 2, summary)[5],0)`m à pieds.
 
 
-## 7.2. Depuis la grille
+### 7.2. Depuis la grille
 
 ```{r}
 nrow(grid) * nrow(d)
@@ -421,7 +421,7 @@ Les calculs ne seront pas présentés ici, et ont été effectués en local. Les
 
 
 ::: callout-important
-### osrmNearest
+#### osrmNearest()
 Pour que l'engin de routage calcule un itinéraire, les points d'origine et de destination doivent être localisés sur une route. Si le point d'entrée ne se situe par sur une route, il sera déplacé sur le point le plus proche situé sur une route, en distance euclidienne. Cela peut avoir un impact sur l'itinéraire final ainsi que les temps de trajet, plus ou moins important selon le type d'espace (urbain ou rural).
 :::
 
@@ -436,42 +436,24 @@ o$Y <- st_coordinates(o)[, 2]
 o <- st_set_geometry(o[, c("X", "Y")], NULL)
 
 # Les points de destination restent les mêmes
-matcar <- list()
-matbike <- list()
+matfoot <- list()
 
 for(i in 1:nrow(d)){
-  matcar[[i]] <- osrmTable(src = o[, c("X", "Y")],
+  matfoot[[i]] <- osrmTable(src = o[, c("X", "Y")],
                         dst = d[i , c("X", "Y")],
                         measure = "duration",
                         osrm.profile = 'foot')
   Sys.sleep(5)
-  matcar[[i]]$ID_ORIG <- c(1:nrow(o))
-  matcar[[i]]$ID_DEST <- rep(i, nrow(o))
-  matcar[[i]] <- data.frame("ID_ORIG" = matcar[[i]]$ID_ORIG,
-                         "ID_DEST" = matcar[[i]]$ID_DEST,
-                         "duration" = matcar[[i]]$durations)
-  colnames(matcar[[i]]) <- c("ID_ORIG", "ID_DEST", "dur_car")
+  matfoot[[i]]$ID_ORIG <- c(1:nrow(o))
+  matfoot[[i]]$ID_DEST <- rep(i, nrow(o))
+  matfoot[[i]] <- data.frame("ID_ORIG" = matfoot[[i]]$ID_ORIG,
+                         "ID_DEST" = matfoot[[i]]$ID_DEST,
+                         "duration" = matfoot[[i]]$durations)
+  colnames(matfoot[[i]]) <- c("ID_ORIG", "ID_DEST", "dur_foot")
 }
 
-
-for(i in 1:nrow(d)){
-  matbike[[i]] <- osrmTable(src = o[, c("X", "Y")],
-                        dst = d[i , c("X", "Y")],
-                        measure = "duration",
-                        osrm.profile = "bike")
-  Sys.sleep(5)
-  matbike[[i]]$ID_ORIG <- c(1:nrow(o))
-  matbike[[i]]$ID_DEST <- rep(i, nrow(o))
-  matbike[[i]] <- data.frame("ID_ORIG" = matbike[[i]]$ID_ORIG,
-                         "ID_DEST" = matbike[[i]]$ID_DEST,
-                         "duration" = matbike[[i]]$durations)
-  colnames(matbike[[i]]) <- c("ID_ORIG", "ID_DEST", "dur_car")
-}
-
-matcar <- do.call(rbind, matcar)
-matbike <- do.call(rbind, matbike)
-write.csv(matcar, "data/matcar.csv")
-write.csv(matbike, "data/matbike.csv")
+matfoot <- do.call(rbind, matfoot)
+write.csv(matfoot, "data/matfoot.csv", row.names = FALSE)
 ```
 
 
@@ -479,21 +461,21 @@ Nous pouvons maintenant calculer plusieurs indicateurs d'accessibilité : temps 
 
 
 ```{r}
-mat <- readRDS("data/mat.rds")
+mat <- read.csv("data/matfoot.csv")
 # Restaurant le plus proche pour chaque point de grille
-poi_min <- aggregate(duration ~ ID_ORIG, mat, FUN = min, na.rm = TRUE)
+poi_min <- aggregate(dur_foot ~ ID_ORIG, mat, FUN = min, na.rm = TRUE)
 
 # Récupérer l'identifiant de destination associé
 poi_min <- do.call(rbind,
-                     lapply(split(mat, mat$ID_ORIG),
-                            function(x) x[which.min(x$duration), ]))
+                   lapply(split(mat, mat$ID_ORIG),
+                          function(x) x[which.min(x$dur_foot), ]))
 
 # Cartographier
-grid <- merge(grid, poi_min,
-              by.x = "ID", by.y = "ID_ORIG", all.x = TRUE)
+poi_min_sf <- merge(grid, poi_min,
+                    by.x = "ID", by.y = "ID_ORIG", all.x = TRUE)
 
 om_map(res, title = "Temps d'accès au restaurant le plus proche")
-mf_map(grid, var = "duration", type = "choro", breaks = seq(0,15,3),
+mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
        alpha = .6, border = NA, leg_title = "Temps\n(min.)",
        leg_val_rnd = 0, pal = "Greens", leg_pos = "topright", add = TRUE)
 ```
@@ -501,15 +483,18 @@ mf_map(grid, var = "duration", type = "choro", breaks = seq(0,15,3),
 
 ```{r}
 # Nombre de poi à moins de 5 minutes
-mat5 <- mat[mat$duration < 5 ,]
-mat5 <- aggregate(duration ~ ID_ORIG, mat5, FUN = length)
+mat5 <- mat[mat$dur_foot < 5 ,]
+mat5$n <- 1
+mat5 <- aggregate(list(n_resto = mat5$n),
+                  list(ID_ORIG = mat5$ID_ORIG),
+                  FUN = sum)
 
 grid <- merge(grid[, "ID"], mat5,
               by.x = "ID", by.y = "ID_ORIG", all.x = TRUE)
-grid$duration[is.na(grid$duration)] <- 0
+grid$n_resto[is.na(grid$n_resto)] <- 0
 
 om_map(res, title = "Restaurants à moins de 5 minutes")
-mf_map(grid, var = "duration", type = "choro", breaks = c(0,1,5,10,30,40),
+mf_map(grid, var = "n_resto", type = "choro", breaks = c(0,1,5,10,30,40),
        alpha = .6, border = NA, leg_title = "Nb de\nrestaurants",
        leg_val_rnd = 0, pal = "Reds", leg_pos = "topright", add = TRUE)
 ```
