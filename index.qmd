@@ -484,6 +484,8 @@ Nous pouvons maintenant calculer plusieurs indicateurs d'accessibilité : temps 
 
 
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 mat <- read.csv("data/matfoot.csv")
 # Restaurant le plus proche pour chaque point de grille
 poi_min <- aggregate(dur_foot ~ ID_ORIG, mat, FUN = min, na.rm = TRUE)
@@ -504,7 +506,18 @@ mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
 ```
 
 
+::: callout-important
+#### Valhalla
+
+C'est un autre engin de routage
+
+![](img/valh.png)
+:::
+
+
 ```{r}
+#| fig-width: 7
+#| fig-height: 7
 # Nombre de poi à moins de 5 minutes
 mat5 <- mat[mat$dur_foot < 5 ,]
 mat5$n <- 1
@@ -551,6 +564,8 @@ Le package `stplanr` [@R-stplanr] permet initialement de modéliser et de travai
 
 
 ```{r, warning = FALSE}
+#| fig-width: 7
+#| fig-height: 7
 routes <- st_read("data/mat.gpkg", layer = "routes")
 routes <- st_transform(routes, crs = "EPSG:3857")
 routes$n <- 1
@@ -645,6 +660,7 @@ mf_map(res$urban, col = "#a83c0a", border = "#e0dfdf", lwd = .5)
 mf_map(res$green, col = "#569128", border = "#569128", lwd = .5, add = TRUE)
 mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
 mf_map(res$railway, col = "grey80", lty = 2, lwd = .2, add = TRUE)
+mf_map(res$building, col = "#942222", border = "#942222", lwd = .5, add= TRUE)
 mf_map(res$road, col = "grey80", border = NA, lwd = .2, add = TRUE)
 mf_map(res$street, col = "grey80", border = NA, lwd = .2, add = TRUE)
 mf_map(res$zone, col = "#a83c0a33", alpha = .1, border = NA, add = TRUE)
