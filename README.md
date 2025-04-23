@@ -33,22 +33,22 @@ Elles permettent d'adapter le script sans recalculer les itinéraires aux contex
 
 <div align="center">
   <a href="Tournée des pizzerias à Lille">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Lille_pizza.png" width="274px"/>
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Lille_pizza.png" width="260px"/>
   </a>
   <a href="Tournée des pizzerias à Condorcet">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Condorcet_pizza.png" width="274px"/> 
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Condorcet_pizza.png" width="260px"/> 
   </a>
   <a href="Tournée des pizzerias à Toulouse">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Toulouse_pizza.png" width="274px"/> 
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Toulouse_pizza.png" width="260px"/> 
   </a>
   <a href="Tournée des pizzerias à Grenoble">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Grenoble_pizza.png" width="274px"/> 
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Grenoble_pizza.png" width="260px"/> 
   </a>
   <a href="Tournée des pizzerias à Nantes">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Nantes_pizza.png" width="274px"/> 
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Nantes_pizza.png" width="260px"/> 
   </a>
   <a href="Tournée des pizzerias à Clermont-Ferrand">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Clermont_pizza.png" width="274px"/> 
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Clermont_pizza.png" width="260px"/> 
   </a>
 </div>
 
