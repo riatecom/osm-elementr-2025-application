@@ -4,7 +4,7 @@ Réalisé par Louis Laurian, Ronan Ysebaert, Timothée Giraud et Matthieu Viry (
 
 ## Contenu
 
-Cette chaîne de traitements reproductible a pour vocation de mettre en pratique les éléments plus théoriques abordés en amont. 
+Cette chaîne de traitements reproductible a pour vocation de mettre en pratique les éléments plus théoriques abordés [précédemment](https://github.com/riatecom/osm-elementr-2025). 
 Elle peut utilement être remobilisée dans d’autres contextes spatiaux ou thématiques. 
 
 Cette mise en pratique porte sur l'accessibilité aux bars et restaurants depuis la gare SNCF de Compiègne en utilisant exclusivement des données d'OpenStreetMap.
@@ -12,7 +12,9 @@ Cette mise en pratique porte sur l'accessibilité aux bars et restaurants depuis
 
 ## Le notebook
 
-Accessible [ici]()
+Accessible [ici]() 
+
+> rajouter lien à la fin ou comme dans l'autre dépôt render quarto.qmd
 
 <div align="center">
   <a href="Aménités gustatives à Compiègne">
