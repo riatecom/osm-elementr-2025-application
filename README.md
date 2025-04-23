@@ -7,22 +7,63 @@ Réalisé par Louis Laurian, Ronan Ysebaert, Timothée Giraud et Matthieu Viry (
 Cette chaîne de traitements reproductible a pour vocation de mettre en pratique les éléments plus théoriques abordés en amont. 
 Elle peut utilement être remobilisée dans d’autres contextes spatiaux ou thématiques. 
 
-
-## Accéder aux données
-
+Cette mise en pratique porte sur l'accessibilité aux bars et restaurants depuis la gare SNCF de Compiègne en utilisant exclusivement des données d'OpenStreetMap.
 
 
+## Le notebook
+
+Accessible [ici]()
+
+
+## Rejouer l'analyse
+
+Télécharger le contenu de ce dépôt, ouvrez le fichier proj.Rproj, puis le fichier script .R. Il reproduit en tout point le contenu du support de formation. 
+
+![](img/download.png)
+
+
+## Extensibilité des analyses
+
+Outre la reproductibilité des analyses proposées, nous montrons aussi leur **extensibilité** à d'autres contextes. 
+
+Le script ne repose ainsi en entrée que sur une seule adresse (la gare de Compiègne dans le notebook). Nous l'avons transposé à 6 autres villes pour l'exemple. 
+Les données issues du routage (temps de calcul un peu long pour utiliser le serveur de démonstration OSRM avec raison) ont été préparées en amont dans [ce dossier](https://github.com/riatecom/osm-elementr-2025-application/tree/main/data)
+
+Elles permettent d'adapter le script sans recalculer les itinéraires aux contextes spatiaux suivants : Lille, Nantes, Clermont-Ferrand, Condorcet, Grenoble et Toulouse.  
 
 <div align="center">
-  <a href="Tournée des pizzerias à Toulouse">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Toulouse_pizza.png" width="412px"/> 
+  <a href="Tournée des pizzerias à Lille">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Lille_pizza.png" width="274px"/>
   </a>
-  <a href="Tournée des pizzerias à Compiègne">
-    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_pizza.png" width="412px"/>
+  <a href="Tournée des pizzerias à Condorcet">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Condorcet_pizza.png" width="274px"/> 
+  </a>
+  <a href="Tournée des pizzerias à Toulouse">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Toulouse_pizza.png" width="274px"/> 
+  </a>
+  <a href="Tournée des pizzerias à Grenoble">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Grenoble_pizza.png" width="274px"/> 
+  </a>
+  <a href="Tournée des pizzerias à Nantes">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Nantes_pizza.png" width="274px"/> 
+  </a>
+  <a href="Tournée des pizzerias à Clermont-Ferrand">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Clermont_pizza.png" width="274px"/> 
   </a>
 </div>
 
+Voici le code R qui a permis de produire ces représentations graphiques
+
 ```
+# Import packages
+library(tidygeocoder) # géocodage
+library(osmdata) # import de données OSM (vecteur)
+library(maposm) # import de données OSM (couches géo)
+library(osrm) # calcul d'itinéraires
+library(sf) # manipulation de données vectorielles
+library(mapsf) # cartographie thématique
+library(maplegend) # légendes
+
 # Import adresses
 cs <- read.csv("data/case_studies.csv", encoding = "UTF-8", sep = ",")
 
