@@ -14,11 +14,11 @@ Elle peut utilement être remobilisée dans d’autres contextes spatiaux ou th�
 
 
 <div align="center">
-  <a href="https://github.com/JosManoel">
-    <img src="https://image_1.png" width="412px"/> 
+  <a href="Tournée des pizzerias à Toulouse">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Toulouse_pizza.png" width="412px"/> 
   </a>
-  <a href="https://github.com/JosManoel">
-    <img src="https://image_2.png" width="412px"/>
+  <a href="Tournée des pizzerias à Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_pizza.png" width="412px"/>
   </a>
 </div>
 
