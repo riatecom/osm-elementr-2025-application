@@ -14,6 +14,27 @@ Cette mise en pratique porte sur l'accessibilité aux bars et restaurants depuis
 
 Accessible [ici]()
 
+<div align="center">
+  <a href="Aménités gustatives à Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_01_carr.png" width="260px"/>
+  </a>
+  <a href="La montagne alimentaire de Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_02_kde.png" width="260px"/> 
+  </a>
+  <a href="Isochrones autour de la gare de Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_03_isochrones.png" width="260px"/> 
+  </a>
+  <a href="Temps d'accès au restaurant le plus proche à Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_04_travel_time.png" width="260px"/> 
+  </a>
+  <a href="Nombre de restaurants à moins de 5 minutes à Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_05_restos_5mn.png" width="260px"/> 
+  </a>
+  <a href="La route des pizzas à Compiègne">
+    <img src="https://github.com/riatecom/osm-elementr-2025-application/blob/main/img/Compiegne_pizza.png" width="260px"/> 
+  </a>
+</div>
+
 
 ## Rejouer l'analyse
 
