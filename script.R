@@ -1,14 +1,14 @@
--------------------------------------------------------------------------------
-# Utiliser OSM avec R ----
+###############################################################################R
+# Utiliser OSM avec R ----                                                     
 # Script associé au notebook
 # Par Louis Laurian et Ronan Ysebaert, Mai 2025
--------------------------------------------------------------------------------
+###############################################################################R
 
-# 0. Note méthodologique et objectifs ----  
---------------------------------------------------------------------------------
+# Objectifs ----  
+###############################################################################R
 # Cette analyse est reproductible en n'importe quel lieu, avec une adresse (adr)
 # et un nom de ville (lib). Néanmoins les temps de calcul utilisant le serveur
-# de démonstration ont été paramétrées pour ne pas le surcharger. L'exécution
+# de démonstration ont été paramétrés pour ne pas le surcharger. L'exécution
 # de ces blocs de code prennent du temps. En conséquence, 6 jeux de données
 # ont été préparés en amont et les blocs de codes relevant des calculs
 # d'itinéraires / temps de trajets sont placés en commentaires, mais sont
@@ -17,12 +17,16 @@
 # Objectif : identifier les secteurs accessibles à pieds pour prendre un verre 
 # ou manger lorsque l'on est en transit dans une gare SNCF donnée
 #
-# Prérequis : une connexion internet pour charger les points OSM  
--------------------------------------------------------------------------------  
-      
+# Prérequis : une connexion internet pour charger les couches OSM  
+###############################################################################R
+     
 # 1. Initialiser l'analyse ----  
   
 ## 1.1 Packages nécessaires (OSM) ----
+
+# Installer maposm
+#install.packages("maposm", repos = "https://riatelab.r-universe.dev")
+
 library(tidygeocoder) # géocodage
 library(maptiles) # import de tuiles OSM (raster)
 library(osmdata) # import de données OSM (vecteur)
@@ -47,14 +51,14 @@ cs <- cs[cs$lib == "Compiegne",]
 adr <- cs$adr
 lib <- cs$lib
 
-#----#
+#---#
 
 # 2. Géocodage ----
 pt <- data.frame(address = adr)
 pt <- geocode(.tbl = pt, address = "address", quiet = TRUE) |>
   st_as_sf(coords = c("long", "lat"), crs = 4326)
 
-#---#
+#----#
 
 # 3. Import de tuiles OSM ----
 # Définir une emprise autour du point (3 km)
@@ -116,7 +120,7 @@ mf_credits("OpenStreetMap contributors, 2025", pos = "bottomleft")
 
 #---#
 
-# 4. Import de points avec osmdata ----
+# 5. Import de points avec osmdata ----
 # Définir l'emprise et le type d'objets d'intérêt
 q <- opq(bbox = emprise, osm_types = "node")
 
@@ -147,8 +151,10 @@ mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 
 #---#
 
-# 6. Cartographie interactive avec mapview
+# 6. Cartographie interactive avec mapview ----
 mapview(res$zone, alpha.regions = 0) + mapview(poi)
+
+#---#
 
 # 7. Carroyage ----
 # Création d'une grille régulière hexagonale de 300m de résolution
@@ -482,21 +488,12 @@ start <- st_as_sf(start, coords = c("X", "Y"), crs = "EPSG:3857")
 pizz <- poi[!is.na(poi$cuisine) & poi$cuisine == "pizza" ,]|>
   st_transform(crs = "EPSG:3857")
 
-mf_map(res$urban, col = "#a83c0a", border = "#e0dfdf", lwd = .5)
-mf_map(res$green, col = "#569128", border = "#569128", lwd = .5, add = TRUE)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
-mf_map(res$railway, col = "grey80", lty = 2, lwd = .2, add = TRUE)
-mf_map(res$building, col = "#942222", border = "#942222", lwd = .5, add= TRUE)
-mf_map(res$road, col = "grey80", border = NA, lwd = .2, add = TRUE)
-mf_map(res$street, col = "grey80", border = NA, lwd = .2, add = TRUE)
-mf_map(res$zone, col = "#a83c0a33", alpha = .1, border = NA, add = TRUE)
-mf_map(res$zone, col = NA, border = "#d7b578", lwd = 15, add = TRUE) 
+om_map(res, 
+       title = paste0(lib, " / La route de la pizza en ", 
+                round(sum(trip$duration, 0)), " minutes à pieds"),
+       theme = "pizza")
 mf_map(trip, col = "black", lwd = 3, lty = 3, add = TRUE)
 mf_map(start[start$id != 1, ], pch = 20, cex = 2, col = "black", add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, col = "darkblue", lwd = 2, add = TRUE)
-mf_label(start, var = "id", cex = .8, overlap = FALSE, pos = 4, col = "black", halo = TRUE)
-mf_title(paste0(lib, " / La route de la pizza en ", 
-                round(sum(trip$duration, 0)), " minutes à pieds"))
-mf_arrow()
-mf_scale(size = 500, scale_units = "m")
-mf_credits("OpenStreetMap contributors, 2025", pos = "bottomleft")
+mf_label(start, var = "id", cex = .8, overlap = FALSE, pos = 4, col = "black", 
+         halo = TRUE)
