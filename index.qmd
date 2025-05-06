@@ -7,12 +7,8 @@ author:
       - ref: riate
   - name: Ronan Ysebaert
     orcid: 0000-0002-7344-5911
-    affiliations: 
-      - ref: riate
   - name: Timothée Giraud
     orcid: 0000-0002-1932-3323
-    affiliations: 
-      - ref: riate
 affiliations:
   - id: riate
     name: Centre pour l’analyse spatiale et la géovisualisation (UAR RIATE)
@@ -32,12 +28,43 @@ format:
     toc: true
     toc-title: Résumé
     toc-depth: 3
-    toc-location: left
+    toc-location: right
     bibliography: bib.bib
-    linkcolor: "#d52420"
+    linkcolor: "#d31329"
+    css: custom.css
 editor_options: 
   chunk_output_type: console
 ---
+
+## Objectifs
+
+Ce document présente un usage possible des packages R qui interfacent OpenStreetMap (OSM) : **géocoder une adresse**, **import de tuiles et de couches géographiques**, **import de points d'intérêt**, **routage** et **calcul d'itinéraires**.
+
+Il propose aussi des **méthodes spatiales** (carroyages, KDE, segments de lignes) et des **visualisations associées** pour restituer graphiquement la structure spatiale de semis de points ou de lignes. 
+
+En **utilisant exclusivement des informations issues d'OSM**, l'exercice consiste à **identifier les secteurs accessibles à pieds dans le voisinage géographique d'un lieu défini par une adresse**. 
+
+
+## Reproduire l'analyse
+
+Pour reproduire l'analyse, télécharger l'archive ZIP associée au dépôt [https://github.com/riatecom/osm-elementr-2025-application](https://github.com/riatecom/osm-elementr-2025-application), ouvrir le fichier proj.Rproj puis le fichier script.R qui reproduit en tout point le contenu du support de formation. 
+
+Cette analyse est reproductible en n'importe quel lieu, avec une adresse (adr) et un nom de ville (lib). Néanmoins les temps de calcul utilisant le serveur de démonstration d'OSRM ont été paramétrés pour ne pas le surcharger. L'exécution de ces blocs de code prennent du temps. 
+
+En conséquence, 6 jeux de données ont été préparés en amont à partir de l'adresse des gares SNCF de Lille, Toulouse, Grenoble, Nantes, Clermont-Ferrand et Compiègne, ainsi que de la station de métro Front Populaire. Les blocs de code relevant des calculs d'itinéraires / temps de trajets sont placés en commentaires dans le fichier script.R, mais sont fonctionnels.
+
+```{r}
+cs <- read.csv("data/case_studies.csv", encoding = "UTF-8", sep = ",")
+cs
+```
+
+Nous présentons ici les résultats depuis la **gare SNCF de Compiègne**.  
+
+```{r}
+cs <- cs[cs$lib == "Compiegne",]
+adr <- cs$adr
+lib <- cs$lib
+```
 
 
 ## 0. Packages
