@@ -84,8 +84,8 @@ library(terra) # manipulation de données raster
 library(mapsf) # cartographie thématique
 library(maplegend) # légendes
 library(spatstat) # analyse de semis de points
-library(stplanr) # segmentiser des lignes
 library(mapview) # cartographie interactive
+library(stplanr) # segmentiser des lignes
 library(lwgeom)
 ```
 
@@ -96,8 +96,7 @@ Le package `tidygeocoder` [@R-tidygeocoder] permet d'utiliser des services de g�
 
 ```{r}
 loc <- "Mairie de Compiègne"
-pt <- data.frame(address = "28 Place de l'Hôtel de Ville, 60200 Compiègne")
-pt <- geocode(.tbl = pt, address = "address", quiet = TRUE) |>
+pt <- geo(address = "28 Place de l'Hôtel de Ville, 60200 Compiègne") |>
   st_as_sf(coords = c("long", "lat"), crs = 4326)
 pt
 ```
@@ -176,7 +175,7 @@ mf_credits("OpenStreetMap contributors, 2025", pos = "bottomleft")
 
 Le package `osmdata` permet d'extraire des données OSM à partir de l'API [Overpass](https://overpass-api.de/). Il nécessite dans un premier temps d'établir une *bounding box* au sein de laquelle seront extraites les données, puis de l'exécuter (fonction `add_osm_feature()`). Le résultat est une liste, qu'il faut ensuite convertir en objet sf.
 
-Les objets OSM prennent la forme de *nodes* (points), *ways* (lignes ou polygones), ou *relations* (relation entre plusieurs objets). Ces éléments sont décrits par un ensemble de *tags*, recensées sous forme de clé-valeurs (*key-values*). Ici, nous recherchons dans la clé **amenity** les points (*nodes*) correspondant aux restaurants, bars et cafés. En dehors des clés-valeurs principales, d'autres attributs peuvent être présents, comme en l'occurence le type de cuisine, ou bien les horaires.
+Les objets OSM prennent la forme de *nodes* (points), *ways* (lignes ou polygones), ou *relations* (relation entre plusieurs objets). Ces éléments sont décrits par un ensemble de *tags*, recensées sous forme de clé-valeurs (*key-values*). Ici, nous recherchons dans la clé **amenity** les points (*nodes*) correspondant aux restaurants, bars et cafés (*value* = restaurant, bar, cafe). En dehors des clés-valeurs principales, d'autres attributs peuvent être présents, comme en l'occurence le type de cuisine, ou bien les horaires.
 
 
 ```{r, warning = FALSE}
@@ -210,17 +209,16 @@ La fonction `om_map()` affiche les couches géographiques récupérées.
 # Affichage
 om_map(res, title = "Autour de la mairie")
 mf_map(poi_reproj, type = "typo", var = "amenity", cex = .7, pch = 15, 
-       leg_pos = "topright", leg_val_cex = .9, leg_title_cex = .9,
-       add = TRUE)
-mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue",
-       add = TRUE)
+       leg_pos = "topright", leg_val_cex = .9, leg_title_cex = .9, add = TRUE)
+mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 ```
 
 
 Il est possible d'utiliser le package `mapview` [@R-mapview] pour afficher les points ainsi que leurs attributs, de manière interactive.
 
 ```{r}
-mapview(res$zone, alpha.regions = 0) + mapview(poi)
+mapview(res$zone, alpha.regions = 0, layer.name = "Zone") + 
+  mapview(poi, layer.name = "Manger et boire")
 ```
 
 
@@ -252,14 +250,16 @@ Une fois les points d'intérêt récupérés, il est possible de les agréger da
 ```{r}
 #| fig-width: 7
 #| fig-height: 7
+# Création d'une grille régulière hexagonale de 300m de résolution
 grid <- st_make_grid(res$zone, cellsize = 300, square = FALSE)
 grid <- st_intersection(grid, res$zone)
 grid <- st_sf(ID = 1:length(grid), geom = grid)
 
-# compter
+# Compter les POIs dans les carreaux
 inter <- st_intersects(grid, poi_reproj, sparse = TRUE)
 grid$n_poi <- lengths(inter)
 
+# Cartographie
 om_map(res, title = "Autour de la mairie")
 mf_map(grid, var = "n_poi", type = "choro", breaks = c(0,1,3,5,10,15),
        alpha = .6, border = NA, leg_title = "Nombre \nd'aménités",
@@ -299,10 +299,10 @@ r <- rast(ds) * 100 * 100
 crs(r) <- st_crs(poi_reproj)$wkt
 r
 
+pal <- c( "#418e40", "#a5be6a", "#e2cf6a", "#c19849", "#ab6c32", "#842f1a")
 mf_map(res$zone, col = "#f2efe9", border = NA, expandBB = c(0,.3,0,0))
 mf_raster(r, leg_title = "N. restaurants / ha.", leg_pos = "left", 
-          pal = c( "#75871B", "#BAB97D", "#FAF3CE", "#FDE16A", "#F9B40E",
-                   "#E88C23", "#A25933"), add = TRUE)
+          pal = pal, add = TRUE)
 mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
@@ -312,7 +312,6 @@ mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 mf_title("La montagne alimentaire - Compiègne")
 ```
 
-> Couleurs ? 
 
 Il est possible de convertir cette couche en format vecteur. Par défaut, la fonction `as.polygons()` arrondit les valeurs des pixels à l'entier.
 
@@ -401,7 +400,6 @@ mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 mf_title("Densité de restaurants")
 ```
 
-> Effet de bord
 
 ## 7. Temps d'accès
 
@@ -418,6 +416,10 @@ Pour calculer les temps de trajet (en minutes) et les distances (en mètres) ent
 
 Nous construisons d'abord une matrice O/D composées de coordonnées X/Y des points d'origine et de destination.
 
+::: callout-warning
+#### Utilisation de l'API OSRM
+Par souci de respect d'utilisation de l'API, une partie du code ci-dessous est passé en commentaire et non joué. Le résultat est enregistré sous format RDS pour être utilisé par la suite. Dans les morceaux de code suivants, le code apparaît dans des chunks sous option *eval = FALSE.*
+:::
 
 ```{r}
 # Création de la matrice O/D
@@ -429,16 +431,22 @@ d <- data.frame(X = st_coordinates(poi)[, 1],
                 Y = st_coordinates(poi)[, 2])
 
 # 1 requête : 1 point d'origine, 92 points de destination
-mat_dist <- osrmTable(src = o,
-                      dst = d,
-                      measure = "distance",
-                      osrm.profile = 'foot')
+#mat_dist <- osrmTable(src = o,
+#                      dst = d,
+#                      measure = "distance",
+#                      osrm.profile = 'foot')
+#saveRDS(mat_dist, "data/mat_dist.rds")
+
 # Intervalle de 5 secondes entre les requêtes
-Sys.sleep(5)
-mat_dur <- osrmTable(src = o,
-                     dst = d,
-                     measure = "duration",
-                     osrm.profile = 'foot')
+#Sys.sleep(5)
+#mat_dur <- osrmTable(src = o,
+#                     dst = d,
+#                     measure = "duration",
+#                     osrm.profile = 'foot')
+#saveRDS(mat_dur, "data/mat_dur.rds")
+
+mat_dist <- readRDS("data/mat_dist.rds")
+mat_dur <- readRDS("data/mat_dur.rds")
 
 dist <- t(mat_dist$distances)
 dur <- t(mat_dur$durations)
@@ -449,9 +457,6 @@ apply(poi$dur, 2, summary)
 apply(poi$dist, 2, summary)
 ```
 
-> Jouer la requête ou la passer en eval = FALSE ?
-
-> Montrer l'output de osrmTable() ?
 
 Il est possible d'atteindre `r nrow(d)/2` restaurants, cafés ou bars en moins de `r round(median(poi$dur),0)` min à pieds depuis la mairie de Compiègne, et les trois quarts se situent à moins de `r round(apply(poi$dist, 2, summary)[5],-1)`m à pieds.
 
@@ -563,7 +568,7 @@ grid$n_resto[is.na(grid$n_resto)] <- 0
 
 om_map(res, title = "Restaurants à moins de 5 minutes")
 mf_map(grid, var = "n_resto", type = "choro", breaks = c(0,1,5,10,30,40),
-       alpha = .6, border = NA, leg_title = "Nb de\nrestaurants",
+       alpha = .6, border = NA, leg_title = "Nombre de\nrestaurants",
        leg_val_rnd = 0, pal = "Reds", leg_pos = "topright", add = TRUE)
 ```
 
@@ -584,7 +589,7 @@ st_write(isos, "data/mat.gpkg", layer = "isos")
 ```{r, warning = FALSE}
 #| fig-width: 7
 #| fig-height: 7
-isos <- st_read("data/mat.gpkg", layer = "isos")
+isos <- st_read("data/mat.gpkg", layer = "isos", quiet = TRUE)
 isos <- st_transform(isos, crs = "EPSG:3857")
 isos <- st_intersection(isos, res$zone)
 
