@@ -20,9 +20,9 @@
 # Prérequis : une connexion internet pour charger les couches OSM  
 ###############################################################################R
      
-# 1. Initialiser l'analyse ----  
+# 0. Initialiser l'analyse ----  
   
-## 1.1 Packages nécessaires (OSM) ----
+## 0.1 Packages nécessaires (OSM) ----
 
 # Installer maposm
 #install.packages("maposm", repos = "https://riatelab.r-universe.dev")
@@ -33,7 +33,7 @@ library(osmdata) # import de données OSM (vecteur)
 library(maposm) # import de données OSM (couches géo)
 library(osrm) # calcul d'itinéraires
 
-## 1.2 Autres packages utilitaires ----
+## 0.2 Autres packages utilitaires ----
 library(sf) # manipulation de données vectorielles
 library(terra) # manipulation de données raster
 library(mapsf) # cartographie thématique
@@ -43,8 +43,7 @@ library(stplanr) # segmentiser des lignes
 library(mapview) # cartographie interactive
 library(lwgeom)
 
-## 1.3 Import des adresses ---- 
-# Clermont, Grenoble, Toulouse, Compiègne  
+## 0.3 Import des adresses ---- 
 cs <- read.csv("data/case_studies.csv", encoding = "UTF-8", sep = ",")
 cs
 cs <- cs[cs$lib == "Compiegne",]
@@ -53,14 +52,14 @@ lib <- cs$lib
 
 #---#
 
-# 2. Géocodage ----
+# 1. Géocodage ----
 pt <- geo(address = adr) |>
   st_as_sf(coords = c("long", "lat"), crs = 4326)
 pt
 
 #----#
 
-# 3. Import de tuiles OSM ----
+# 2. Import de tuiles OSM ----
 # Définir une emprise autour du point (3 km)
 emprise <- st_buffer(pt, 3000) |>
   st_bbox()
@@ -96,7 +95,7 @@ mf_title(paste0(lib, " / Tuiles OSM - OpenStreetmap.HOT"))
 
 #---#
 
-# 4. Import de couches géographiques d'habillage avec maposm ----
+# 3. Import de couches géographiques d'habillage avec maposm ----
 # Charger les couches (2 km autour du point)
 res <- om_get(x = c(st_coordinates(pt)[1],
                     st_coordinates(pt)[2]),
@@ -120,7 +119,7 @@ mf_credits("OpenStreetMap contributors, 2025", pos = "bottomleft")
 
 #---#
 
-# 5. Import de points avec osmdata ----
+# 4. Import de points avec osmdata ----
 # Définir l'emprise et le type d'objets d'intérêt
 q <- opq(bbox = emprise, osm_types = "node")
 
@@ -149,20 +148,16 @@ mf_map(poi_3857, type = "typo", var = "amenity", cex = .7, pch = 15,
        add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 
-#---#
-
-# 6. Cartographie interactive avec mapview ----
+# Bonus : cartographie interactive avec mapview ----
 mapview(res$zone, alpha.regions = 0) + mapview(poi)
 
-#---#
-
-# 7. Carroyage ----
+# 5. Carroyage ----
 # Création d'une grille régulière hexagonale de 300m de résolution
 grid <- st_make_grid(res$zone, cellsize = 300, square = FALSE)
 grid <- st_intersection(grid, res$zone)
 grid <- st_sf(ID = 1:length(grid), geom = grid)
 
-# Compter les POI dans les carrreaux
+# Compter les POI dans les carreaux
 inter <- st_intersects(grid, poi_3857, sparse = TRUE)
 grid$n_poi <- lengths(inter)
 
@@ -175,16 +170,16 @@ mf_title("Aménités gustatives - données carroyées")
 
 #---#
 
-# 8. Lissage (KDE) ----
+# 6. Lissage (KDE) ----
 
-## 8.1 Préparation KDE ----
+## 6.1 Préparation KDE ----
 # Création du lissage avec spatstat
 p <- as.ppp(X = st_coordinates(poi_3857), W = as.owin(res$zone))
 ds <- density.ppp(x = p, sigma = 100, eps = 10, positive = TRUE)
 r <- rast(ds) * 100 * 100
 crs(r) <- st_crs(poi_3857)$wkt
 
-## 8.2 Carto KDE ----
+## 6.2 Carto KDE ----
 # Définir une palette pour les cartes à venir
 pal <- c( "#418e40", "#a5be6a", "#e2cf6a", "#c19849", "#ab6c32", "#842f1a")
 
@@ -200,7 +195,7 @@ mf_map(poi_3857, pch = 20, cex = .3, col = "red", add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 mf_title(paste0(lib, " / La montagne alimentaire"))
 
-## 8.3 Carto / KDE discrétisé ----
+## 6.3 Carto / KDE discrétisé ----
 
 # Discrétiser le raster
 bks <- c(0, 0.01, 0.1, 0.5, 1, 2, minmax(r)[2])
@@ -219,7 +214,7 @@ mf_map(poi_3857, pch = 20, cex = .3, col = "red", add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 mf_title(paste0(lib, " / La montagne alimentaire vectorisée"))
 
-## 8.4 Carto /restos et cafés/bars séparés ----
+## 6.4 Carto /restos et cafés/bars séparés ----
 # Regrouper cafés/bars
 poi_3857$amenity[poi_3857$amenity %in% c("bar", "cafe")] <- "bar-cafe"
 
@@ -273,11 +268,11 @@ mf_map(poi_3857[poi_3857$amenity == "restaurant",], pch = 20, cex = .3,
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 mf_title(paste0("Aller manger à ", lib))
 
-# 9. Depuis la gare----
+# 7. Depuis la gare----
 # Uniquement les restaurants
 poi <- poi[poi$amenity == "restaurant",]
 
-## 9.1 Calcul isochrones ----
+## 7.1 Calcul isochrones ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
 # o <- data.frame(X = st_coordinates(pt)[, 1],
 #                 Y = st_coordinates(pt)[, 2])
@@ -290,7 +285,7 @@ poi <- poi[poi$amenity == "restaurant",]
 # 
 # st_write(isos, paste0("data/", lib, ".gpkg"), layer = "isos")
 
-## 9.2 Calcul temps de trajets gare/ restaurants ----
+## 7.2 Calcul temps de trajets gare/ restaurants ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
 # Création de la matrice O/D
 # d <- data.frame(X = st_coordinates(poi)[, 1],
@@ -314,7 +309,7 @@ poi <- poi[poi$amenity == "restaurant",]
 # poi$dur <- dur
 # st_write(poi, paste0("data/", lib, ".gpkg"), layer = "poi")
 
-## 9.3 Carto / Isochrones et restos autour de la gare ----
+## 7.3 Carto / Isochrones et restos autour de la gare ----
 poi <- st_read(paste0("data/", lib, ".gpkg"), layer = "poi")
 isos <- st_read(paste0("data/", lib, ".gpkg"), layer = "isos")
 isos <- st_transform(isos, crs = "EPSG:3857")
@@ -342,8 +337,8 @@ poi_10$name
 
 #---#
 
-# 10 The place to be ? ----
-### 10.1 Calcul des temps de trajet depuis la grille ----
+# 8 The place to be ? ----
+### 8.1 Calcul des temps de trajet depuis la grille ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
 # Coordonnées des points d'origine : centroïdes des cellules de la grille
 # o <- st_centroid(grid) |>
@@ -373,7 +368,7 @@ poi_10$name
 # matfoot <- do.call(rbind, matfoot)
 # write.csv(matfoot, paste0("data/matfoot_", lib, ".csv"), row.names = FALSE)
 
-## 10.2 Carto / temps d'accès au restaurant le plus proche ----
+## 8.2 Carto / temps d'accès au restaurant le plus proche ----
 # Préparation des données
 mat <- read.csv(paste0("data/matfoot_", lib, ".csv"))
 
@@ -393,7 +388,7 @@ mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
        leg_val_rnd = 0, pal = "Greens", leg_pos = "topright",
        col_na = "#8B000060", leg_no_data = "Plus de 15 minutes", add = TRUE)
 
-## 10.3 Carto / nombre de POI à moins de 5 minutes ----
+## 8.3 Carto / nombre de POI à moins de 5 minutes ----
 # Préparation des données
 mat5 <- mat[mat$dur_foot < 5 ,]
 mat5$n <- 1
@@ -410,13 +405,13 @@ mf_map(grid, var = "n_resto", type = "choro", breaks = c(0,1,5,10,30,max(grid$n_
        alpha = .6, border = NA, leg_title = "Nb de\nrestaurants",
        leg_val_rnd = 0, pal = "Reds", leg_pos = "topright", add = TRUE)
 
-# 11. Itinéraires ----
+# 9. Itinéraires ----
 # On ne s'intéresse qu'aux pizzerias
 poi <- st_read(paste0("data/", lib, ".gpkg"), layer = "poi")
 st_geometry(poi) <- "geometry"
 pizz <- poi[!is.na(poi$cuisine) & poi$cuisine == "pizza" , "geometry"]
 
-## 11.1 Calcul des itinéraires gare / pizzerias ----
+## 9.1 Calcul des itinéraires gare / pizzerias ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
 # o <- data.frame(X = st_coordinates(pt)[, 1],
 #                 Y = st_coordinates(pt)[, 2])
@@ -436,7 +431,7 @@ pizz <- poi[!is.na(poi$cuisine) & poi$cuisine == "pizza" , "geometry"]
 # routes <- do.call(rbind, routes)
 # st_write(routes, paste0("data/", lib, ".gpkg"), layer = "routes")
 
-## 11.2 Carto / La route des pizzas ---- 
+## 9.2 Carto / La route des pizzas ---- 
 routes <- st_read(paste0("data/", lib, ".gpkg"), layer = "routes")
 routes <- st_transform(routes, crs = "EPSG:3857")
 routes$n <- 1
@@ -463,7 +458,7 @@ for(i in nrow(routes):1){
 leg(type = "cont", val = c(min(routes$distance), 1000, max(routes$distance)),
     pal = pal, pos = "left", title = "Distance (m)")
 
-## 11.3 Calcul d'un trip ----
+## 9.3 Calcul d'un trip ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
 # # Ajouter le point de départ : la gare
 # pizz <- rbind(pt[1, "geometry"], pizz)
@@ -475,7 +470,7 @@ leg(type = "cont", val = c(min(routes$distance), 1000, max(routes$distance)),
 # trip <- trip[[1]]$trip
 # st_write(trip, paste0("data/", lib, ".gpkg"), layer = "trip")
 
-## 11.4 Carto / la tournée des pizzas ----
+## 9.4 Carto / la tournée des pizzas ----
 trip <- st_read(paste0("data/", lib, ".gpkg"), layer = "trip")
 trip <- st_transform(trip, crs = "EPSG:3857")
 
