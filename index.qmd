@@ -95,8 +95,7 @@ library(lwgeom)
 Le package `tidygeocoder` [@R-tidygeocoder] permet d'utiliser des services de géocodage en ligne. Par défaut, le package utilise [Nominatim](https://nominatim.org/) qui se base sur les données OSM.
 
 ```{r}
-loc <- "Mairie de Compiègne"
-pt <- geo(address = "28 Place de l'Hôtel de Ville, 60200 Compiègne") |>
+pt <- geo(address = adr) |>
   st_as_sf(coords = c("long", "lat"), crs = 4326)
 pt
 ```
@@ -123,7 +122,7 @@ pt_reproj <- st_transform(pt, crs = "EPSG:3857")
 
 mf_raster(tiles, expandBB = c(rep(-.2,4)))
 mf_map(pt_reproj, pch = 24, cex = 1.3, col = "darkblue", lwd = 2, add = TRUE)
-mf_annotation(pt_reproj, txt = loc)
+mf_annotation(pt_reproj, txt = paste0("Gare de ", lib))
 mf_title("Tuiles OSM - Défaut")
 
 # Autre exemple de fournisseur
@@ -135,7 +134,7 @@ tiles <- get_tiles(x = emprise,
 
 mf_raster(tiles, expandBB = c(rep(-.2,4)))
 mf_map(pt_reproj, pch = 24, cex = 1.3, col = "darkblue", lwd = 2, add = TRUE)
-mf_annotation(pt_reproj, txt = loc)
+mf_annotation(pt_reproj, txt = paste0("Gare de ", lib))
 mf_title("Tuiles OSM - OpenStreetmap.HOT")
 ```
 
@@ -164,7 +163,7 @@ mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$building, col = "#d9d0c9", border = "#c6bab1", lwd = .5, add = TRUE)
 mf_map(pt_reproj, pch = 24, cex = 1.3, col = "darkblue", lwd = 2, add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_title("Autour de la mairie")
+mf_title("Autour de la gare")
 mf_arrow()
 mf_scale(size = 500, scale_units = "m")
 mf_credits("OpenStreetMap contributors, 2025", pos = "bottomleft")
@@ -207,7 +206,7 @@ La fonction `om_map()` affiche les couches géographiques récupérées.
 #| fig-width: 7
 #| fig-height: 7
 # Affichage
-om_map(res, title = "Autour de la mairie")
+om_map(res, title = "Autour de la gare")
 mf_map(poi_reproj, type = "typo", var = "amenity", cex = .7, pch = 15, 
        leg_pos = "topright", leg_val_cex = .9, leg_title_cex = .9, add = TRUE)
 mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
@@ -260,7 +259,7 @@ inter <- st_intersects(grid, poi_reproj, sparse = TRUE)
 grid$n_poi <- lengths(inter)
 
 # Cartographie
-om_map(res, title = "Autour de la mairie")
+om_map(res)
 mf_map(grid, var = "n_poi", type = "choro", breaks = c(0,1,3,5,10,15),
        alpha = .6, border = NA, leg_title = "Nombre \nd'aménités",
        leg_val_rnd = 0, leg_pos = "topright", add = TRUE)
@@ -410,9 +409,9 @@ D'après la [documentation de l'API OSRM](https://project-osrm.org/docs/v5.24.0/
 Pour des calculs plus volumineux (échelle nationale voire européenne), il est possible d'installer une instance OSRM sur son propre serveur (voir [ici](https://rcarto.github.io/posts/build_osrm_server/)).
 
 
-### 7.1. Depuis la mairie
+### 7.1. Depuis la gare
 
-Pour calculer les temps de trajet (en minutes) et les distances (en mètres) entre la mairie de Compiègne et l'ensemble des restaurants, bars et cafés situés dans un rayon de 2000m, nous utilisons la fonction `osrmTable()`, qui présente en sortie une liste composée de deux dataframes correspondant aux coordonnées des points d'origine et de destination, et d'un vecteur correspondant à la métrique calculée. **Il est possible de calculer les distances et temps de trajet entre plusieurs couples origine / destination en une seule requête.**
+Pour calculer les temps de trajet (en minutes) et les distances (en mètres) entre la gare de Compiègne et l'ensemble des restaurants, bars et cafés situés dans un rayon de 2000m, nous utilisons la fonction `osrmTable()`, qui présente en sortie une liste composée de deux dataframes correspondant aux coordonnées des points d'origine et de destination, et d'un vecteur correspondant à la métrique calculée. **Il est possible de calculer les distances et temps de trajet entre plusieurs couples origine / destination en une seule requête.**
 
 Nous construisons d'abord une matrice O/D composées de coordonnées X/Y des points d'origine et de destination.
 
@@ -458,7 +457,7 @@ apply(poi$dist, 2, summary)
 ```
 
 
-Il est possible d'atteindre `r nrow(d)/2` restaurants, cafés ou bars en moins de `r round(median(poi$dur),0)` min à pieds depuis la mairie de Compiègne, et les trois quarts se situent à moins de `r round(apply(poi$dist, 2, summary)[5],-1)`m à pieds.
+Il est possible d'atteindre `r round(nrow(d)/2)` restaurants, cafés ou bars en moins de `r round(median(poi$dur),0)` min à pieds depuis la mairie de Compiègne, et les trois quarts se situent à moins de `r round(apply(poi$dist, 2, summary)[5],-1)`m à pieds.
 
 
 ### 7.2. Depuis la grille
@@ -537,7 +536,7 @@ poi_min_sf <- merge(grid, poi_min,
                     by.x = "ID", by.y = "ID_ORIG", all.x = TRUE)
 
 om_map(res, title = "Temps d'accès au restaurant le plus proche")
-mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
+mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = c(0,5,10,15,20,40),
        alpha = .6, border = NA, leg_title = "Temps\n(min.)",
        leg_val_rnd = 0, pal = "Greens", leg_pos = "topright", add = TRUE)
 ```

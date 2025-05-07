@@ -54,9 +54,9 @@ lib <- cs$lib
 #---#
 
 # 2. Géocodage ----
-pt <- data.frame(address = adr)
-pt <- geocode(.tbl = pt, address = "address", quiet = TRUE) |>
+pt <- geo(address = adr) |>
   st_as_sf(coords = c("long", "lat"), crs = 4326)
+pt
 
 #----#
 
