@@ -1,11 +1,17 @@
 #toc-title{
-  background-image: url("img/logo.png");
   background-position: top center;
   background-size: contain;
-  color: white;
+  color: #d31329;
+  font-size: 1rem;
   padding-top: 80px !important;
-  padding-bottom: 80px !important;
+  padding-bottom: 5px !important;
   background-repeat: no-repeat;
+}
+
+.sidebar nav[role="doc-toc"] ul > li > a.active {
+    color: #d31329 !important;
+    background-color: white;
+    font-weight: bold;
 }
 
 

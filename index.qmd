@@ -1,5 +1,6 @@
 ---
-title: "Utiliser OpenStreetMap avec R - mise en pratique"
+title: "Utiliser OpenStreetMap avec R"
+subtitle: "Mise en pratique"
 author:
   - name: Louis Laurian
     orcid: 0009-0002-7275-5536
@@ -26,19 +27,21 @@ format:
     code-tools: true
     code-fold: false
     toc: true
-    toc-title: Résumé
+    toc-title: Utiliser OpenStreetMap avec R - Mise en pratique
     toc-depth: 3
     toc-location: right
     bibliography: bib.bib
     linkcolor: "#d31329"
     css: custom.css
+    include-after-body: "footer.html"
 editor_options: 
   chunk_output_type: console
 ---
 
+
 ## Objectifs
 
-Ce document présente un usage possible des packages R qui interfacent OpenStreetMap (OSM) : **géocoder une adresse**, **import de tuiles et de couches géographiques**, **import de points d'intérêt**, **routage** et **calcul d'itinéraires**.
+Ce document présente un usage possible des packages R qui interfacent OpenStreetMap (OSM): **géocoder une adresse**, **import de tuiles et de couches géographiques**, **import de points d'intérêt**, **routage** et **calcul d'itinéraires**.
 
 Il propose aussi des **méthodes spatiales** (carroyages, KDE, segments de lignes) et des **visualisations associées** pour restituer graphiquement la structure spatiale de semis de points ou de lignes. 
 
@@ -71,7 +74,7 @@ lib <- cs$lib
 
 ```{r, warning = FALSE, message = FALSE}
 # 1. Packages qui interfacent des données OSM
-# install.packages('maposm', repos = 'https://riatelab.r-universe.dev')
+#install.packages('maposm', repos = 'https://riatelab.r-universe.dev')
 library(tidygeocoder) # géocodage
 library(maptiles) # import de tuiles OSM (raster)
 library(osmdata) # import de données OSM (vecteur)
@@ -721,3 +724,5 @@ sum(trip$duration)
 
 
 D'après les données OSM, moins de 25 minutes suffisent pour faire la tournée des pizzas à Compiègne. On est large !!
+
+## [](img/logo.png)
