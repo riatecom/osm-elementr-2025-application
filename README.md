@@ -12,9 +12,7 @@ Cette mise en pratique porte sur l'accessibilité aux bars et restaurants depuis
 
 ## Le notebook
 
-Accessible [ici]() 
-
-> rajouter lien à la fin ou comme dans l'autre dépôt render quarto.qmd
+Version en ligne accessible à l'adresse suivante : **[https://riatecom.github.io/osm-elementr-2025-application/](https://riatecom.github.io/osm-elementr-2025-application/)** 
 
 <div align="center">
   <a href="Aménités gustatives à Compiègne">
