@@ -46,7 +46,7 @@ Avant de lancer le script, n'oubliez pas d'installer les packages n√©cessaires √
 
 ```
 pkgs <- c("tidygeocoder", "maptiles", "osmdata", "osrm", "sf", "terra", "mapsf",
-          "maplegend", "spatstat", "stplanr", "mapview", "lwgeom")
+          "maplegend", "spatstat", "stplanr", "mapview")
 install.packages(pkgs)
 install.packages("maposm", repos = "https://riatelab.r-universe.dev")
 ```

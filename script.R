@@ -42,12 +42,11 @@ library(maplegend) # légendes
 library(spatstat) # analyse de semis de points
 library(stplanr) # segmentiser des lignes
 library(mapview) # cartographie interactive
-library(lwgeom)
 
 ## 0.3 Import des adresses ---- 
 cs <- read.csv("data/case_studies.csv", encoding = "UTF-8", sep = ",")
 cs
-cs <- cs[cs$lib == "Toulouse",]
+cs <- cs[cs$lib == "Compiegne",]
 adr <- cs$adr
 lib <- cs$lib
 
@@ -218,22 +217,12 @@ mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 # Uniquement les restaurants
 poi <- poi[poi$amenity == "restaurant",]
 
-## 7.1 Calcul isochrones ----
+## 7.1 Calcul temps de trajets gare/ restaurants ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
+# Création de la matrice O/D
 # o <- data.frame(X = st_coordinates(pt)[, 1],
 #                 Y = st_coordinates(pt)[, 2])
 # row.names(o) <- 1:nrow(o)
-# 
-# isos <- osrmIsochrone(loc = o,
-#                       breaks = seq(0,30,5),
-#                       res = 60,
-#                       osrm.profile = "foot")
-# 
-# st_write(isos, paste0("data/", lib, ".gpkg"), layer = "isos")
-
-## 7.2 Calcul temps de trajets gare/ restaurants ----
-## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
-# Création de la matrice O/D
 # d <- data.frame(X = st_coordinates(poi)[, 1],
 #                 Y = st_coordinates(poi)[, 2])
 # 
@@ -243,10 +232,21 @@ poi <- poi[poi$amenity == "restaurant",]
 #                       dst = d,
 #                       measure = "distance",
 #                       osrm.profile = 'foot')
+# Sys.sleep(5)
 # mat_dur <- osrmTable(src = o,
 #                      dst = d,
 #                      measure = "duration",
 #                      osrm.profile = 'foot')
+
+## 7.2 Calcul isochrones ----
+## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##
+# 
+# isos <- osrmIsochrone(loc = o,
+#                       breaks = seq(0,45,5),
+#                       res = 60,
+#                       osrm.profile = "foot")
+# 
+# st_write(isos, paste0("data/", lib, ".gpkg"), layer = "isos")
 
 # Mise en forme des données
 # dist <- t(mat_dist$distances)
@@ -257,10 +257,10 @@ poi <- poi[poi$amenity == "restaurant",]
 
 ## 7.3 Carto / Isochrones et restos autour de la gare ----
 poi <- st_read(paste0("data/", lib, ".gpkg"), layer = "poi")
+poi <- st_transform(poi, crs = "EPSG:3857")
 isos <- st_read(paste0("data/", lib, ".gpkg"), layer = "isos")
 isos <- st_transform(isos, crs = "EPSG:3857")
 isos <- st_intersection(isos, res$zone)
-poi <- st_transform(poi, crs = "EPSG:3857")
 
 om_map(res, title = paste0(lib, " / Isochrones autour de la gare"))
 mf_map(
@@ -330,7 +330,7 @@ om_map(res, title = "Temps d'accès au restaurant le plus proche")
 mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
        alpha = .6, border = NA, leg_title = "Temps de trajet\n(minutes à pieds)",
        leg_val_rnd = 0, pal = "Greens", leg_pos = "topright",
-       col_na = "#8B000060", leg_no_data = "Plus de 15 minutes", add = TRUE)
+       col_na = "#8B000060", leg_no_data = "> 15", add = TRUE)
 
 ## 8.3 Carto / nombre de POI à moins de 5 minutes ----
 # Préparation des données
@@ -380,14 +380,10 @@ routes <- st_read(paste0("data/", lib, ".gpkg"), layer = "routes")
 routes <- st_transform(routes, crs = "EPSG:3857")
 routes$n <- 1
 routes$distance <- routes$distance * 1000
-
-# La fonction overline permet de compter le nombre d'occurence des tronçons
-seg <- overline(routes, attrib = "n", fun = sum)
-
 routes <- routes[order(routes$distance, decreasing = TRUE), ]
-l_seg <- list()
 
 # La fonction line_segment découpe un objet sf LINESTRING en segments réguliers
+l_seg <- list()
 for(i in 1:nrow(routes)){
   l_seg[[i]] <- line_segment(
     routes[i, ],
@@ -403,6 +399,7 @@ leg(type = "cont", val = c(min(routes$distance), 1000, max(routes$distance)),
     pal = pal, pos = "left", title = "Distance (m)")
 
 # Largeur des traits selon l'occurence du tronçon
+seg <- overline(routes, attrib = "n", fun = sum)
 om_map(res, title = "Routes")
 mf_map(seg, var = "n", type = "grad", col= "darkred", breaks = "fisher", 
        nbreaks = 5, lwd = c(1,3,5,9,13), leg_val_rnd = 0,
