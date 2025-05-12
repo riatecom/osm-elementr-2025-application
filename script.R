@@ -37,6 +37,7 @@ library(osrm) # calcul d'itinéraires
 library(sf) # manipulation de données vectorielles
 library(terra) # manipulation de données raster
 library(mapsf) # cartographie thématique
+library(mapiso) # discrétiser des données continues
 library(maplegend) # légendes
 library(spatstat) # analyse de semis de points
 library(stplanr) # segmentiser des lignes
@@ -46,7 +47,7 @@ library(lwgeom)
 ## 0.3 Import des adresses ---- 
 cs <- read.csv("data/case_studies.csv", encoding = "UTF-8", sep = ",")
 cs
-cs <- cs[cs$lib == "Compiegne",]
+cs <- cs[cs$lib == "Toulouse",]
 adr <- cs$adr
 lib <- cs$lib
 
@@ -198,75 +199,20 @@ mf_title(paste0(lib, " / La montagne alimentaire"))
 ## 6.3 Carto / KDE discrétisé ----
 
 # Discrétiser le raster
-bks <- c(0, 0.01, 0.1, 0.5, 1, 2, minmax(r)[2])
+bks <- bks <- c(0, 0.1, 0.5, 1, minmax(r)[2])
+isos <- mapiso(x = r, var = "lyr.1 ", breaks = bks)
 
-# Cartographie
 mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_raster(r, type = "interval", breaks = bks, pal = pal, rev = TRUE,
-          leg_val_rnd = 2, leg_pos = "topleft", leg_title = "Densité\n (n/ha)")
 mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
        add = TRUE)
-mf_map(res$railway, col = "#ffffff60", border = "white", lwd = .2, add = TRUE)
-mf_map(res$road, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
-mf_map(res$street, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
+mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
+mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
+mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
+mf_map(isos, "isomin", "choro", border = NA, alpha = 0.6, breaks = bks,
+       leg_title = "Densité\n (n/ha)", add = TRUE)
+mf_map(poi_3857, pch = 20, cex = .2, col = "black", add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_map(poi_3857, pch = 20, cex = .3, col = "red", add = TRUE)
-mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
-mf_title(paste0(lib, " / La montagne alimentaire vectorisée"))
 
-## 6.4 Carto /restos et cafés/bars séparés ----
-# Regrouper cafés/bars
-poi_3857$amenity[poi_3857$amenity %in% c("bar", "cafe")] <- "bar-cafe"
-
-# Préparation de la boucle
-p <- list()
-ds <- list()
-r <- list()
-sel <- levels(as.factor(poi_3857$amenity))
-
-# Produire le KDE pour cafés/bars puis restaurants
-for(i in 1:length(sel)){
-  p[[i]] <- as.ppp(
-    X = st_coordinates(poi_3857[poi_3857$amenity == sel[i] ,]),
-    W = as.owin(res$zone))
-  ds[[i]] <- density.ppp(x = p[[i]], sigma = 100, eps = 10,
-                         positive = TRUE)
-  r[[i]] <- rast(ds[[i]]) * 100 * 100
-  crs(r[[i]]) <- st_crs(poi_3857)$wkt
-}
-
-# Cartographie cafés/bars discrétisée
-par(mfrow = c(1,2))
-mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_raster(r[[1]], type = "interval", breaks = bks, pal = pal, rev = TRUE,
-          leg_val_rnd = 2, leg_pos = "topleft", leg_title = "Densité cafés-bars\n (n/ha)",
-          add = TRUE)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
-       add = TRUE)
-mf_map(res$railway, col = "#ffffff60", border = "white", lwd = .2, add = TRUE)
-mf_map(res$road, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
-mf_map(res$street, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
-mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_map(poi_3857[poi_3857$amenity == "bar-cafe",], pch = 20, cex = .3,
-       col = "red", add = TRUE)
-mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
-mf_title(paste0("Boire un verre à ", lib))
-
-# Cartographie restaurants discrétisée
-mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_raster(r[[2]], type = "interval", breaks = bks, pal = pal, rev = TRUE,
-          leg_val_rnd = 2, leg_pos = "topleft", leg_title = "Densité restaurants\n (n/ha)", 
-          add = TRUE)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
-       add = TRUE)
-mf_map(res$railway, col = "#ffffff60", border = "white", lwd = .2, add = TRUE)
-mf_map(res$road, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
-mf_map(res$street, col = "#ffffff60", border = "white", lwd = .5, add = TRUE)
-mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_map(poi_3857[poi_3857$amenity == "restaurant",], pch = 20, cex = .3,
-       col = "red", add = TRUE)
-mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
-mf_title(paste0("Aller manger à ", lib))
 
 # 7. Depuis la gare----
 # Uniquement les restaurants
@@ -316,8 +262,6 @@ isos <- st_transform(isos, crs = "EPSG:3857")
 isos <- st_intersection(isos, res$zone)
 poi <- st_transform(poi, crs = "EPSG:3857")
 
-par(mfrow = c(1,1))
-
 om_map(res, title = paste0(lib, " / Isochrones autour de la gare"))
 mf_map(
     x = isos, var = "isomin", type = "choro",
@@ -331,8 +275,8 @@ mf_map(x = poi, var = "dur", type = "choro",
        add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 
-# Liste des restaurants en moins de 10 minutes à pieds
-poi_10 <- poi[poi$dur < 10,]
+# Liste des restaurants en moins de 5 minutes à pieds
+poi_10 <- poi[poi$dur < 5,]
 poi_10$name
 
 #---#
@@ -457,6 +401,12 @@ for(i in nrow(routes):1){
 }
 leg(type = "cont", val = c(min(routes$distance), 1000, max(routes$distance)),
     pal = pal, pos = "left", title = "Distance (m)")
+
+# Largeur des traits selon l'occurence du tronçon
+om_map(res, title = "Routes")
+mf_map(seg, var = "n", type = "grad", col= "darkred", breaks = "fisher", 
+       nbreaks = 5, lwd = c(1,3,5,9,13), leg_val_rnd = 0,
+       leg_pos = "topright", leg_title = 'N. Routes', add = TRUE)
 
 ## 9.3 Calcul d'un trip ----
 ## ! Ce bloc de code (fonctionnel) a été préparé en amont ! ##

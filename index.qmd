@@ -85,6 +85,7 @@ library(osrm) # calcul d'itinéraires
 library(sf) # manipulation de données vectorielles
 library(terra) # manipulation de données raster
 library(mapsf) # cartographie thématique
+library(mapiso) # discrétiser des données continues
 library(maplegend) # légendes
 library(spatstat) # analyse de semis de points
 library(mapview) # cartographie interactive
@@ -149,8 +150,8 @@ Pour la cartographie, le package `maposm` (pas sur le CRAN) se base sur les fonc
 La fonction principale, `om_get()`, permet de récupérer certaines couches géographiques utiles (routes, parcs, bâti, etc) autour d'un point, dans un rayon donné. Le résultat prend la forme d'une liste d'objets sf.
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 res <- om_get(x = c(st_coordinates(pt)[1],
                     st_coordinates(pt)[2]),
               r = 2000)
@@ -206,8 +207,8 @@ poi_reproj  <- st_transform(poi , crs = "EPSG:3857")
 La fonction `om_map()` affiche les couches géographiques récupérées.
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 # Affichage
 om_map(res, title = "Autour de la gare")
 mf_map(poi_reproj, type = "typo", var = "amenity", cex = .7, pch = 15, 
@@ -250,8 +251,8 @@ Une fois les points d'intérêt récupérés, il est possible de les agréger da
 
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 # Création d'une grille régulière hexagonale de 300m de résolution
 grid <- st_make_grid(res$zone, cellsize = 300, square = FALSE)
 grid <- st_intersection(grid, res$zone)
@@ -293,7 +294,7 @@ Une fois les densités calculées, nous créons un objet de type *SpatRaster*. L
 
 
 ```{r, warning = FALSE}
-#| fig-width: 8
+#| fig-width: 7
 #| fig-height: 7
 
 # Calcul densité de restaurants par hectare
@@ -309,25 +310,20 @@ mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5, add = TRUE)
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(poi_reproj, pch = 20, cex = .2, col = "black", add = TRUE)
+mf_map(poi_reproj, pch = 20, cex = .3, col = "red", add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
 mf_title("La montagne culinaire - Compiègne")
 ```
 
-
-Il est possible de convertir cette couche en format vecteur. Par défaut, la fonction `as.polygons()` arrondit les valeurs des pixels à l'entier.
-
+Le package `mapiso` [@R-mapiso] permet de transformer des grilles régulières (ici notre raster) en contours de polygones (format vectoriel).
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
-# par défaut
-r_poly <- as.polygons(r) |>
-  st_as_sf()
+#| fig-width: 7
+#| fig-height: 7
 
-# tous les dixièmes
-r_poly <- as.polygons(r, round = TRUE, digits = 1) |>
-  st_as_sf()
+# Discrétiser le raster
+bks <- bks <- c(0, 0.1, 0.5, 1, minmax(r)[2])
+isos <- mapiso(x = r, var = "lyr.1 ", breaks = bks)
 
 mf_map(res$zone, col = "#f2efe9", border = NA)
 mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
@@ -335,71 +331,10 @@ mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
 mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
 mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
 mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(r_poly, var = "lyr.1", breaks = quantile(r_poly$lyr.1),
-       border = NA, lwd = .2, type = "choro", alpha = 0.6,
+mf_map(isos, "isomin", "choro", border = NA, alpha = 0.5, breaks = bks,
        leg_title = "Densité\n (n/ha)", add = TRUE)
 mf_map(poi_reproj, pch = 20, cex = .2, col = "black", add = TRUE)
 mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-```
-
-
-Par aménité, discrétisation commune
-
-
-```{r, echo = FALSE}
-# Cafés et bars ensemble
-poi_reproj$amenity[poi_reproj$amenity %in% c("bar", "cafe")] <- "bar-cafe"
-p <- list()
-ds <- list()
-r <- list()
-sel <- levels(as.factor(poi_reproj$amenity))
-
-for(i in 1:length(sel)){
-  p[[i]] <- as.ppp(
-    X = st_coordinates(poi_reproj[poi_reproj$amenity == sel[i] ,]),
-    W = as.owin(res$zone))
-  ds[[i]] <- density.ppp(x = p[[i]], sigma = 100, eps = 10,
-                         positive = TRUE)
-  r[[i]] <- rast(ds[[i]]) * 100 * 100
-  crs(r[[i]]) <- st_crs(poi_reproj)$wkt
-  r[[i]] <- as.polygons(r[[i]], round = TRUE, digits = 1) |>
-    st_as_sf()
-}
-
-# Récupérer l'amplitude
-amp <- do.call(rbind, r)
-amp <- sort(c(unique(amp$lyr.1)))
-bks <- quantile(amp)
-pal <- mf_get_pal(n = length(bks) -1, palette = "Reds", alpha = .6, rev = TRUE)
-
-par(mfrow = c(1,2))
-mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
-       add = TRUE)
-mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
-mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(r[[1]], var = "lyr.1", breaks = bks, type = "choro", border = NA,
-       leg_title = "Densité\n (n/ha)", leg_pos = "bottomleft", pal = pal, 
-       add = TRUE)
-mf_map(poi_reproj[poi_reproj$amenity == "bar-cafe" ,],
-       pch = 20, cex = .2, col = "black", add = TRUE)
-mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_title("Densité de bars et cafés")
-
-mf_map(res$zone, col = "#f2efe9", border = NA)
-mf_map(res$water, col = "#aad3df", border = "#aad3df", lwd = .5,
-       add = TRUE)
-mf_map(res$railway, col = "grey50", lty = 2, lwd = .2, add = TRUE)
-mf_map(res$road, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(res$street, col = "white", border = "white", lwd = .5, add = TRUE)
-mf_map(r[[2]], var = "lyr.1", type = "choro", border = NA, breaks = bks,
-       leg_title = "Densité\n (n/ha)", pal = pal, leg_pos = "bottomleft",
-       add = TRUE)
-mf_map(poi_reproj[poi_reproj$amenity == "restaurant" ,],
-       pch = 20, cex = .2, col = "black", add = TRUE)
-mf_map(res$zone, col = NA, border = "#c6bab1", lwd = 4, add = TRUE)
-mf_title("Densité de restaurants")
 ```
 
 
@@ -523,8 +458,8 @@ Nous pouvons maintenant calculer plusieurs indicateurs d'accessibilité : temps 
 
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7 
 mat <- read.csv("data/matfoot.csv")
 
 # Restaurant le plus proche pour chaque point de grille
@@ -540,8 +475,9 @@ poi_min_sf <- merge(grid, poi_min,
                     by.x = "ID", by.y = "ID_ORIG", all.x = TRUE)
 par(mfrow = c(1,1))
 om_map(res, title = "Temps d'accès au restaurant le plus proche")
-mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = c(0,5,10,15,20,40),
+mf_map(poi_min_sf, var = "dur_foot", type = "choro", breaks = seq(0,15,3),
        alpha = .6, border = NA, leg_title = "Temps\n(min.)",
+       col_na = "#8B000060", leg_no_data = "> 15",
        leg_val_rnd = 0, pal = "Greens", leg_pos = "topright", add = TRUE)
 ```
 
@@ -556,8 +492,8 @@ Valhalla est un engin de routage open source basé sur les données OSM, au mêm
 
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 # moins de 5 minutes
 mat5 <- mat[mat$dur_foot < 5 ,]
 mat5$n <- 1
@@ -590,8 +526,8 @@ st_write(isos, "data/mat.gpkg", layer = "isos", delete_layer = TRUE)
 
 
 ```{r, warning = FALSE}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 isos <- st_read("data/mat.gpkg", layer = "isos", quiet = TRUE)
 isos <- st_transform(isos, crs = "EPSG:3857")
 isos <- st_intersection(isos, res$zone)
@@ -599,6 +535,11 @@ isos <- st_intersection(isos, res$zone)
 om_map(res, title = "Isochrones autour de la gare de Compiègne")
 mf_map(isos, type = "typo", var = "isomax", alpha = .6, pal = "Geyser",
       border = "white", leg_pos = NA, add = TRUE)
+mf_map(st_transform(poi, crs = "EPSG:3857"), var = "dur", type = "choro", 
+       breaks = sort(unique(c(isos$isomin, isos$isomax))),
+       pal = "Geyser", pch = 21, border = "white", leg_pos = NA,
+       add = TRUE)
+mf_map(pt_reproj, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
 ```
 
 
@@ -630,6 +571,8 @@ Le package `stplanr` [@R-stplanr] permet initialement de modéliser et de travai
 
 
 ```{r, warning = FALSE}
+#| fig-width: 7
+#| fig-height: 7
 routes <- st_read("data/mat.gpkg", layer = "routes", quiet = TRUE)
 routes <- st_transform(routes, crs = "EPSG:3857")
 routes$n <- 1
@@ -658,21 +601,12 @@ for(i in nrow(routes):1){
 }
 
 leg(type = "cont", val = c(min(routes$distance), 1000, max(routes$distance)),
-    pal = pal, pos = "left", title = "Distance (m)")
+    pal = pal, pos = "topright", title = "Distance (m)")
 
 
-om_map(res, title = "Routes", theme = "dark")
-mf_map(seg, var = "n", type = "grad", col= "#00f5f5", leg_pos = NA, 
-       breaks = "fisher", nbreaks = 5, lwd = c(1,3,6,10,15), add = TRUE)
-mf_map(seg, var = "n", type = "grad", col= "#fff70c", breaks = "fisher", 
-       nbreaks = 5, lwd = c(.5,1.5,2.5,6,10), leg_val_rnd = 0,
-       leg_pos = "topright", leg_title = 'N. Routes', add = TRUE)
-
-om_map(res, title = "Routes", theme = "dark")
-mf_map(seg, var = "n", type = "grad", col= "#00f5f570", leg_pos = NA, 
-       breaks = "fisher", nbreaks = 5, lwd = c(2,5,9,14,18), add = TRUE)
-mf_map(seg, var = "n", type = "grad", col= "#00f5f5", breaks = "fisher", 
-       nbreaks = 5, lwd = c(1,3,7,11,13), leg_val_rnd = 0,
+om_map(res, title = "Routes")
+mf_map(seg, var = "n", type = "grad", col= "darkred", breaks = "fisher", 
+       nbreaks = 5, lwd = c(1,3,5,9,13), leg_val_rnd = 0,
        leg_pos = "topright", leg_title = 'N. Routes', add = TRUE)
 ```
 
@@ -701,8 +635,8 @@ st_write(trip, "data/mat.gpkg", layer = "trip", delete_layer = TRUE)
 
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 8
+#| fig-width: 7
+#| fig-height: 7
 trip <- st_read("data/mat.gpkg", layer = "trip", quiet = TRUE)
 trips <- st_transform(trip, crs = "EPSG:3857")
 
