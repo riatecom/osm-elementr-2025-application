@@ -42,6 +42,14 @@ Télécharger le contenu de ce dépôt, ouvrez le fichier proj.Rproj, puis le fi
 
 ![](img/download.png)
 
+Avant de lancer le script, n'oubliez pas d'installer les packages nécessaires à l'aide de la commande suivante :
+
+```
+pkgs <- c("tidygeocoder", "maptiles", "osmdata", "osrm", "sf", "terra", "mapsf",
+          "maplegend", "spatstat", "stplanr", "mapview", "lwgeom")
+install.packages(pkgs)
+install.packages("maposm", repos = "https://riatelab.r-universe.dev")
+```
 
 ## Extensibilité des analyses
 
