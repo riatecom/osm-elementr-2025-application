@@ -44,7 +44,7 @@ Télécharger le contenu de ce dépôt, ouvrez le fichier proj.Rproj, puis le fi
 
 Avant de lancer le script, n'oubliez pas d'installer les packages nécessaires à l'aide de la commande suivante :
 
-```
+```R
 pkgs <- c("tidygeocoder", "maptiles", "osmdata", "osrm", "sf", "terra", "mapsf",
           "maplegend", "spatstat", "stplanr", "mapview")
 install.packages(pkgs)
@@ -83,7 +83,7 @@ Elles permettent d'adapter le script sans recalculer les itinéraires aux contex
 
 Voici le code R qui a permis de produire ces représentations graphiques
 
-```
+```R
 # Import packages
 library(tidygeocoder) # géocodage
 library(osmdata) # import de données OSM (vecteur)
