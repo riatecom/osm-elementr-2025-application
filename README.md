@@ -42,12 +42,20 @@ Télécharger le contenu de ce dépôt, ouvrez le fichier proj.Rproj, puis le fi
 
 ![](img/download.png)
 
-Avant de lancer le script, n'oubliez pas d'installer les packages nécessaires à l'aide de la commande suivante :
+Pour reproduire les analyses, ces lignes de commandes vérifient que vous disposez bien de tous les packages nécessaires, et les installe le cas échéant.
 
-```R
+```r
+# Liste des packages utilisés
 pkgs <- c("tidygeocoder", "maptiles", "osmdata", "osrm", "sf", "terra", "mapsf",
           "maplegend", "spatstat", "stplanr", "mapview")
-install.packages(pkgs)
+
+# Vérifier si ces packages sont installés
+missing_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
+
+# Installation des packages manquants depuis le CRAN
+if(length(missing_pkgs)) install.packages(missing_pkgs)
+
+# Installation de maposm sur r-universe
 install.packages("maposm", repos = "https://riatelab.r-universe.dev")
 ```
 
