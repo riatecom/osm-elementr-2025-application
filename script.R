@@ -255,9 +255,14 @@ poi <- poi[poi$amenity == "restaurant",]
 # poi$dur <- dur
 # st_write(poi, paste0("data/", lib, ".gpkg"), layer = "poi")
 
-## 7.3 Carto / Isochrones et restos autour de la gare ----
 poi <- st_read(paste0("data/", lib, ".gpkg"), layer = "poi")
 poi <- st_transform(poi, crs = "EPSG:3857")
+
+summary(poi$dur)
+summary(poi$dist)
+poi$name[poi$dur < 5]
+
+## 7.3 Carto / Isochrones et restos autour de la gare ----
 isos <- st_read(paste0("data/", lib, ".gpkg"), layer = "isos")
 isos <- st_transform(isos, crs = "EPSG:3857")
 isos <- st_intersection(isos, res$zone)
@@ -274,10 +279,6 @@ mf_map(x = poi, var = "dur", type = "choro",
        pal = "Geyser", pch = 21, border = "white", leg_pos = NA,
        add = TRUE)
 mf_map(pt_3857, pch = 24, cex = 1.3, lwd = 2, col = "darkblue", add = TRUE)
-
-# Liste des restaurants en moins de 5 minutes à pieds
-poi_10 <- poi[poi$dur < 5,]
-poi_10$name
 
 #---#
 

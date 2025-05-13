@@ -363,23 +363,24 @@ o <- data.frame(X = st_coordinates(pt)[, 1],
                 Y = st_coordinates(pt)[, 2])
 row.names(o) <- 1:nrow(o)
 
+poi <- poi[poi$amenity == "restaurant",]
 d <- data.frame(X = st_coordinates(poi)[, 1],
                 Y = st_coordinates(poi)[, 2])
 
-# 1 requête : 1 point d'origine, 92 points de destination
-#mat_dist <- osrmTable(src = o,
-#                      dst = d,
-#                      measure = "distance",
-#                      osrm.profile = 'foot')
-#saveRDS(mat_dist, "data/mat_dist.rds")
+# 1 requête : 1 point d'origine, 50 points de destination
+# mat_dist <- osrmTable(src = o,
+#                       dst = d,
+#                       measure = "distance",
+#                       osrm.profile = 'foot')
+# saveRDS(mat_dist, "data/mat_dist.rds")
 
 # Intervalle de 5 secondes entre les requêtes
-#Sys.sleep(5)
-#mat_dur <- osrmTable(src = o,
-#                     dst = d,
-#                     measure = "duration",
-#                     osrm.profile = 'foot')
-#saveRDS(mat_dur, "data/mat_dur.rds")
+# Sys.sleep(5)
+# mat_dur <- osrmTable(src = o,
+#                      dst = d,
+#                      measure = "duration",
+#                      osrm.profile = 'foot')
+# saveRDS(mat_dur, "data/mat_dur.rds")
 
 mat_dist <- readRDS("data/mat_dist.rds")
 mat_dur <- readRDS("data/mat_dur.rds")
@@ -546,7 +547,7 @@ grid <- merge(grid[, "ID"], mat5,
 grid$n_resto[is.na(grid$n_resto)] <- 0
 
 om_map(res, title = "Restaurants à moins de 5 minutes à pied")
-mf_map(grid, var = "n_resto", type = "choro", breaks = c(0,1,5,10,30,max(grid$n_resto)),
+mf_map(grid, var = "n_resto", type = "choro", breaks = c(0,1,5,10,20,max(grid$n_resto)),
        alpha = .6, border = NA, leg_title = "Nombre de\nrestaurants",
        leg_val_rnd = 0, pal = "Reds", leg_pos = "topright", add = TRUE)
 ```
